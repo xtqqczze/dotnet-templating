@@ -884,6 +884,11 @@ Examples:
         <target state="new">An update for template package '{0}' is available.</target>
         <note />
       </trans-unit>
+      <trans-unit id="TemplatesPackageCoordinator_Update_Info_UseInstallerParameter">
+        <source>Use --installer &lt;installer name&gt; to select installer to be used.</source>
+        <target state="new">Use --installer &lt;installer name&gt; to select installer to be used.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="TemplatesPackageCoordinator_Verbose_NuGetCredentialServiceError">
         <source>Failed to initialize NuGet credential service, details: {0}.</source>
         <target state="new">Failed to initialize NuGet credential service, details: {0}.</target>

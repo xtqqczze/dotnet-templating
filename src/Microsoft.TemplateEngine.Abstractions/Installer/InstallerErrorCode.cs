@@ -51,6 +51,16 @@ namespace Microsoft.TemplateEngine.Abstractions.Installer
         /// <summary>
         /// The requested package is invalid and cannot be processed.
         /// </summary>
-        InvalidPackage = 8
+        InvalidPackage = 8,
+
+        /// <summary>
+        /// Can not determine single installer to be used for installing.
+        /// </summary>
+        AmbiguousInstaller = 9,
+
+        /// <summary>
+        /// <see cref="InstallRequest.InstallerName"/> specified doesn't match any registered installer.
+        /// </summary>
+        InvalidInstallerName = 10,
     }
 }

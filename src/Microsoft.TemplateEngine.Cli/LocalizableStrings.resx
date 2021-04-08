@@ -700,4 +700,7 @@ Examples:
   <data name="OptionDescriptionTagFilter" xml:space="preserve">
     <value>Filters the templates based on the tag. Applies to --search and --list.</value>
   </data>
+  <data name="TemplatesPackageCoordinator_Update_Info_UseInstallerParameter" xml:space="preserve">
+    <value>Use --installer &lt;installer name&gt; to select installer to be used.</value>
+  </data>
 </root>

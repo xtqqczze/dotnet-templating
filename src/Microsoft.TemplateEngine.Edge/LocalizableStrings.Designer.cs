@@ -79,6 +79,24 @@ namespace Microsoft.TemplateEngine.Edge {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to determine installer to be used: {0}.
+        /// </summary>
+        internal static string GlobalSettingsTemplatePackagesProvider_Error_AmbiguousInstaller {
+            get {
+                return ResourceManager.GetString("GlobalSettingsTemplatePackagesProvider_Error_AmbiguousInstaller", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Installer &quot;{0}&quot; does not exist..
+        /// </summary>
+        internal static string GlobalSettingsTemplatePackagesProvider_Error_InvalidInstallerName {
+            get {
+                return ResourceManager.GetString("GlobalSettingsTemplatePackagesProvider_Error_InvalidInstallerName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to {0} is already installed, version: {1}, it will be replaced with {2}.
         /// </summary>
         internal static string GlobalSettingsTemplatePackagesProvider_Info_PackageAlreadyInstalled {

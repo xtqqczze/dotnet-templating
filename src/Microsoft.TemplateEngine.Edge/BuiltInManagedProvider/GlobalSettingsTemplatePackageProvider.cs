@@ -11,6 +11,7 @@ using Microsoft.TemplateEngine.Abstractions;
 using Microsoft.TemplateEngine.Abstractions.Installer;
 using Microsoft.TemplateEngine.Abstractions.TemplatePackage;
 using Microsoft.TemplateEngine.Utils;
+using NuGet.Packaging;
 
 #nullable enable
 
@@ -24,7 +25,7 @@ namespace Microsoft.TemplateEngine.Edge.BuiltInManagedProvider
 
         private readonly IEngineEnvironmentSettings _environmentSettings;
         private readonly Dictionary<Guid, IInstaller> _installersByGuid = new Dictionary<Guid, IInstaller>();
-        private readonly Dictionary<string, IInstaller> _installersByName = new Dictionary<string, IInstaller>();
+        private readonly Dictionary<string, IInstaller> _installersByName = new Dictionary<string, IInstaller>(StringComparer.OrdinalIgnoreCase);
         private readonly GlobalSettings _globalSettings;
 
         public GlobalSettingsTemplatePackageProvider(GlobalSettingsTemplatePackageProviderFactory factory, IEngineEnvironmentSettings settings)
@@ -116,16 +117,41 @@ namespace Microsoft.TemplateEngine.Edge.BuiltInManagedProvider
             var results = await Task.WhenAll(installRequests.Select(async installRequest =>
             {
                 var installersThatCanInstall = new List<IInstaller>();
-                foreach (var install in _installersByName.Values)
+                if (string.IsNullOrEmpty(installRequest.InstallerName))
                 {
-                    if (await install.CanInstallAsync(installRequest, cancellationToken).ConfigureAwait(false))
+                    foreach (var install in _installersByName.Values)
                     {
-                        installersThatCanInstall.Add(install);
+                        if (await install.CanInstallAsync(installRequest, cancellationToken).ConfigureAwait(false))
+                        {
+                            installersThatCanInstall.Add(install);
+                        }
                     }
                 }
+                else if (_installersByName.TryGetValue(installRequest.InstallerName, out var namedInstaller))
+                {
+                    installersThatCanInstall.Add(namedInstaller);
+                }
+                else
+                {
+                    return InstallResult.CreateFailure(
+                        installRequest,
+                        InstallerErrorCode.InvalidInstallerName,
+                        string.Format(
+                            LocalizableStrings.GlobalSettingsTemplatePackagesProvider_Error_InvalidInstallerName,
+                            installRequest.InstallerName));
+                }
+
                 if (installersThatCanInstall.Count == 0)
                 {
                     return InstallResult.CreateFailure(installRequest, InstallerErrorCode.UnsupportedRequest, $"{installRequest.PackageIdentifier} cannot be installed");
+                }
+                if (installersThatCanInstall.Count > 1)
+                {
+                    return InstallResult.CreateFailure(installRequest,
+                        InstallerErrorCode.AmbiguousInstaller,
+                        string.Format(
+                            LocalizableStrings.GlobalSettingsTemplatePackagesProvider_Info_PackageAlreadyInstalled,
+                            Environment.NewLine + string.Join(Environment.NewLine, installersThatCanInstall.Select(i => $"\t-{i.Factory.Name}"))));
                 }
 
                 IInstaller installer = installersThatCanInstall[0];

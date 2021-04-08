@@ -1688,6 +1688,15 @@ namespace Microsoft.TemplateEngine.Cli {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Use --installer &lt;installer name&gt; to select installer to be used..
+        /// </summary>
+        public static string TemplatesPackageCoordinator_Update_Info_UseInstallerParameter {
+            get {
+                return ResourceManager.GetString("TemplatesPackageCoordinator_Update_Info_UseInstallerParameter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to initialize NuGet credential service, details: {0}..
         /// </summary>
         public static string TemplatesPackageCoordinator_Verbose_NuGetCredentialServiceError {

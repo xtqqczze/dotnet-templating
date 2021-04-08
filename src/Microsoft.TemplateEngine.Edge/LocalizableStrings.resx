@@ -125,6 +125,12 @@
     <value>version {0}</value>
     <comment>small letters, string is used in the sentence</comment>
   </data>
+  <data name="GlobalSettingsTemplatePackagesProvider_Error_AmbiguousInstaller" xml:space="preserve">
+    <value>Failed to determine installer to be used: {0}</value>
+  </data>
+  <data name="GlobalSettingsTemplatePackagesProvider_Error_InvalidInstallerName" xml:space="preserve">
+    <value>Installer "{0}" does not exist.</value>
+  </data>
   <data name="GlobalSettingsTemplatePackagesProvider_Info_PackageAlreadyInstalled" xml:space="preserve">
     <value>{0} is already installed, version: {1}, it will be replaced with {2}</value>
   </data>

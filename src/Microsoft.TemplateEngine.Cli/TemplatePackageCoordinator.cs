@@ -486,6 +486,13 @@ namespace Microsoft.TemplateEngine.Cli
                                     LocalizableStrings.TemplatesPackageCoordinator_Update_Error_PackageNotSupported,
                                     result.TemplatePackage.DisplayName).Bold().Red());
                             break;
+                        case InstallerErrorCode.AmbiguousInstaller:
+                            Reporter.Error.WriteLine(result.ErrorMessage.Bold().Red());
+                            Reporter.Output.WriteLine(LocalizableStrings.TemplatesPackageCoordinator_Update_Info_UseInstallerParameter);
+                            break;
+                        case InstallerErrorCode.InvalidInstallerName:
+                            Reporter.Error.WriteLine(result.ErrorMessage.Bold().Red());
+                            break;
                         case InstallerErrorCode.GenericError:
                         default:
                             Reporter.Error.WriteLine(

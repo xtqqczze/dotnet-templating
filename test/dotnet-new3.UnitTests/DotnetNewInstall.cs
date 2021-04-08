@@ -457,6 +457,34 @@ namespace dotnet_new3.UnitTests
                 .And.HaveStdErrContaining($"{codebase} is not supported");
         }
 
+        [Fact]
+        public void AmbiguousInstaller()
+        {
+            const string folderNameButAlsoNuGetName = "MiniScaffold";
+            var home = TestUtils.CreateTemporaryFolder("Home");
+            var workingDir = TestUtils.CreateTemporaryFolder();
+            Directory.CreateDirectory(Path.Combine(workingDir, folderNameButAlsoNuGetName));
+
+            new DotnetNewCommand(_log, "-i", folderNameButAlsoNuGetName)
+                .WithWorkingDirectory(workingDir)
+                .WithEnvironmentVariable(TestUtils.HomeEnvironmentVariableName, home)
+                .Execute()
+                .Should().Fail()
+                .And.HaveStdErrContaining("Failed to determine installer to be used")
+                .And.HaveStdErrContaining("Folder")
+                .And.HaveStdErrContaining("NuGet")
+                .And.HaveStdOutContaining("Use --installer <installer name> to select installer to be used.");
+
+            new DotnetNewCommand(_log, "-i", folderNameButAlsoNuGetName, "--installer", "folder")
+                .WithWorkingDirectory(workingDir)
+                .WithEnvironmentVariable(TestUtils.HomeEnvironmentVariableName, home)
+                .Execute()
+                .Should().Fail()
+                .And.HaveStdErrContaining("Failed to determine installer to be used")
+                .And.HaveStdErrContaining("Folder")
+                .And.HaveStdErrContaining("NuGet")
+                .And.HaveStdOutContaining("Use --installer <installer name> to select installer to be used.");
+        }
 
 
     }
