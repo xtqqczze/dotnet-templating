@@ -52,7 +52,15 @@ namespace Microsoft.TemplateEngine.Edge.UnitTests
             using var globalSettings1 = new GlobalSettings(envSettings, settingsFile);
             using var globalSettings2 = new GlobalSettings(envSettings, settingsFile);
             var taskSource = new TaskCompletionSource<TemplatePackageData>();
-            globalSettings2.SettingsChanged += async () => taskSource.TrySetResult((await globalSettings2.GetInstalledTemplatePackagesAsync(default).ConfigureAwait(false)).Single());
+            globalSettings2.SettingsChanged += async () => {
+                var packages = await globalSettings2.GetInstalledTemplatePackagesAsync(default).ConfigureAwait(false);
+                // Sometimes on Linux we get notified about settings file modified
+                // before its actually written, hence need to wait for next notification
+                // that has some content
+                if (packages.Count == 0)
+                    return;
+                taskSource.TrySetResult(packages.Single());
+            };
             var mutex = await globalSettings1.LockAsync(default).ConfigureAwait(false);
             var newData = new TemplatePackageData(
                 Guid.NewGuid(),
