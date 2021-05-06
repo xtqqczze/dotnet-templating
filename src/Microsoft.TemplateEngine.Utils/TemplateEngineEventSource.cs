@@ -68,6 +68,18 @@ namespace Microsoft.TemplateEngine.Utils
             WriteEvent(8);
         }
 
+        [Event(9, Keywords = Keywords.All)]
+        public void PostActionStart(string description)
+        {
+            WriteEvent(9, description);
+        }
+
+        [Event(10, Keywords = Keywords.All)]
+        public void PostActionStop(bool success)
+        {
+            WriteEvent(10, success);
+        }
+
         #endregion
 
         #region EdgeEvents

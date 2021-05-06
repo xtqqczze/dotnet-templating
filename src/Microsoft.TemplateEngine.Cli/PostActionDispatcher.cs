@@ -1,11 +1,14 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using Microsoft.TemplateEngine.Abstractions;
 using Microsoft.TemplateEngine.Cli.PostActionProcessors;
 using Microsoft.TemplateEngine.Edge.Template;
+using Microsoft.TemplateEngine.Utils;
 
 namespace Microsoft.TemplateEngine.Cli
 {
@@ -44,16 +47,11 @@ namespace Microsoft.TemplateEngine.Cli
 
             foreach (IPostAction action in postActions)
             {
-                IPostActionProcessor actionProcessor = null;
-
-                if (action.ActionId != null)
-                {
-                    _environment.SettingsLoader.Components.TryGetComponent(action.ActionId, out actionProcessor);
-                }
+                TemplateEngineEventSource.Log.PostActionStart(action.Description);
 
                 bool result = false;
 
-                if (actionProcessor == null)
+                if (!_environment.SettingsLoader.Components.TryGetComponent(action.ActionId, out IPostActionProcessor actionProcessor))
                 {
                     // The host doesn't know how to handle this action, just display instructions.
                     result = DisplayInstructionsForAction(action);
@@ -98,7 +96,7 @@ namespace Microsoft.TemplateEngine.Cli
                         DisplayInstructionsForAction(action);
                     }
                 }
-
+                TemplateEngineEventSource.Log.PostActionStop(result);
                 if (!result && !action.ContinueOnError)
                 {
                     break;
