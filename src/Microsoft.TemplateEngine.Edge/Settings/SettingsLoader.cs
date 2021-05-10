@@ -307,8 +307,10 @@ namespace Microsoft.TemplateEngine.Edge.Settings
                 {
                     try
                     {
+                        TemplateEngineEventSource.Log.SettingsLoader_FirstRunStart();
                         _onFirstRun?.Invoke(EnvironmentSettings);
                         _paths.WriteAllText(_paths.FirstRunCookie, "");
+                        TemplateEngineEventSource.Log.SettingsLoader_FirstRunStop();
                     }
                     catch (Exception ex)
                     {
@@ -334,6 +336,7 @@ namespace Microsoft.TemplateEngine.Edge.Settings
 
                 TemplateEngineEventSource.Log.SettingsLoader_EnsureLoadedStart();
 
+                TemplateEngineEventSource.Log.SettingsLoader_ParseSettingsStart();
                 string? userSettings = null;
                 for (int i = 0; i < MaxLoadAttempts; ++i)
                 {
@@ -369,6 +372,7 @@ namespace Microsoft.TemplateEngine.Edge.Settings
                 {
                     _userSettings.ProbingPaths.Add(_paths.Content);
                 }
+                TemplateEngineEventSource.Log.SettingsLoader_ParseSettingsStop();
 
                 _componentManager = new ComponentManager(this, _userSettings);
 

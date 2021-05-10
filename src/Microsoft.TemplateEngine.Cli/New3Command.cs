@@ -40,7 +40,7 @@ namespace Microsoft.TemplateEngine.Cli
         /// </summary>
         private readonly INewCommandInput _commandInput;
 
-        private readonly IHostSpecificDataLoader _hostDataLoader;
+        private readonly HostSpecificDataLoader _hostDataLoader;
         private readonly string? _defaultLanguage;
         private readonly New3Callbacks _callbacks;
         private readonly Func<string> _inputGetter = () => Console.ReadLine();
@@ -303,13 +303,31 @@ namespace Microsoft.TemplateEngine.Cli
             TemplateResolutionResult templateResolutionResult = TemplateResolver.GetTemplateResolutionResult(await _settingsLoader.GetTemplatesAsync(default).ConfigureAwait(false), _hostDataLoader, _commandInput, _defaultLanguage);
             if (templateResolutionResult.ResolutionStatus == TemplateResolutionResult.Status.SingleMatch)
             {
-                TemplateInvocationCoordinator invocationCoordinator = new TemplateInvocationCoordinator(_settingsLoader, _commandInput, _telemetryLogger, CommandName, _inputGetter, _callbacks);
-                return await invocationCoordinator.CoordinateInvocationOrAcquisitionAsync(templateResolutionResult.TemplateToInvoke, CancellationToken.None).ConfigureAwait(false);
+                TemplateEngineEventSource.Log.InvokeTemplateAndCheckForUpdateStart(templateResolutionResult.TemplateToInvoke.Info.Identity);
+
+                // start checking for updates
+                TemplatePackageCoordinator packageCoordinator = new TemplatePackageCoordinator(_telemetryLogger, EnvironmentSettings);
+                var checkForUpdateTask = packageCoordinator.CheckUpdateForTemplate(templateResolutionResult.TemplateToInvoke.Info, _commandInput, CancellationToken.None);
+
+                // start creation of template
+                TemplateInvoker invoker = new TemplateInvoker(EnvironmentSettings, _commandInput, _telemetryLogger, CommandName, _inputGetter, _callbacks, _hostDataLoader);
+                var templateCreationTask = invoker.InvokeTemplateAsync(templateResolutionResult.TemplateToInvoke);
+
+                // await for both tasks to finish
+                await Task.WhenAll(checkForUpdateTask, templateCreationTask).ConfigureAwait(false);
+
+                if (checkForUpdateTask.Result != null)
+                {
+                    // print if there is update for this template
+                    packageCoordinator.DisplayUpdateCheckResult(checkForUpdateTask.Result, _commandInput);
+                }
+
+                TemplateEngineEventSource.Log.InvokeTemplateAndCheckForUpdateStop();
+                // return creation result
+                return templateCreationTask.Result;
             }
-            else
-            {
-                return await HelpForTemplateResolution.CoordinateAmbiguousTemplateResolutionDisplayAsync(templateResolutionResult, EnvironmentSettings, _commandInput, _defaultLanguage).ConfigureAwait(false);
-            }
+
+            return await HelpForTemplateResolution.CoordinateAmbiguousTemplateResolutionDisplayAsync(templateResolutionResult, EnvironmentSettings, _commandInput, _defaultLanguage).ConfigureAwait(false);
         }
 
         private async Task<CreationResultStatus> ExecuteAsync()

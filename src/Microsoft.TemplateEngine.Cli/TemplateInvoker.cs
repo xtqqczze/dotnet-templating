@@ -32,7 +32,7 @@ namespace Microsoft.TemplateEngine.Cli
         private readonly TemplateCreator _templateCreator;
         private readonly IHostSpecificDataLoader _hostDataLoader;
 
-        internal TemplateInvoker(IEngineEnvironmentSettings environment, INewCommandInput commandInput, ITelemetryLogger telemetryLogger, string commandName, Func<string> inputGetter, New3Callbacks callbacks)
+        internal TemplateInvoker(IEngineEnvironmentSettings environment, INewCommandInput commandInput, ITelemetryLogger telemetryLogger, string commandName, Func<string> inputGetter, New3Callbacks callbacks, HostSpecificDataLoader hostDataLoader)
         {
             _environment = environment;
             _commandInput = commandInput;
@@ -40,9 +40,9 @@ namespace Microsoft.TemplateEngine.Cli
             _commandName = commandName;
             _inputGetter = inputGetter;
             _callbacks = callbacks;
+            _hostDataLoader = hostDataLoader;
 
             _templateCreator = new TemplateCreator(_environment);
-            _hostDataLoader = new HostSpecificDataLoader(_environment.SettingsLoader);
         }
 
         internal static bool CheckForArgsError(ITemplateMatchInfo template)
@@ -63,7 +63,7 @@ namespace Microsoft.TemplateEngine.Cli
             return argsError;
         }
 
-        internal async Task<CreationResultStatus> InvokeTemplate(ITemplateMatchInfo templateToInvoke)
+        internal async Task<CreationResultStatus> InvokeTemplateAsync(ITemplateMatchInfo templateToInvoke)
         {
             templateToInvoke.Info.Tags.TryGetValue("language", out ICacheTag language);
             bool isMicrosoftAuthored = string.Equals(templateToInvoke.Info.Author, "Microsoft", StringComparison.OrdinalIgnoreCase);

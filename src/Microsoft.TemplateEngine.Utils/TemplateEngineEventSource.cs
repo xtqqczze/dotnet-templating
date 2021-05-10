@@ -57,13 +57,13 @@ namespace Microsoft.TemplateEngine.Utils
         }
 
         [Event(7, Keywords = Keywords.All)]
-        public void CoordinateInvocationOrAcquisitionAsyncStart()
+        public void InvokeTemplateAndCheckForUpdateStart(string identity)
         {
-            WriteEvent(7);
+            WriteEvent(7, identity);
         }
 
         [Event(8, Keywords = Keywords.All)]
-        public void CoordinateInvocationOrAcquisitionAsyncStop()
+        public void InvokeTemplateAndCheckForUpdateStop()
         {
             WriteEvent(8);
         }
@@ -78,6 +78,54 @@ namespace Microsoft.TemplateEngine.Utils
         public void PostActionStop(bool success)
         {
             WriteEvent(10, success);
+        }
+
+        [Event(11, Keywords = Keywords.All)]
+        public void TemplateResolver_AddParameterMatchingToTemplatesStart()
+        {
+            WriteEvent(11);
+        }
+
+        [Event(12, Keywords = Keywords.All)]
+        public void TemplateResolver_AddParameterMatchingToTemplatesStop()
+        {
+            WriteEvent(12);
+        }
+
+        [Event(13, Keywords = Keywords.All)]
+        public void TemplateResolver_GetTemplateResolutionResultForListOrHelpStart(int count)
+        {
+            WriteEvent(13, count);
+        }
+
+        [Event(14, Keywords = Keywords.All)]
+        public void TemplateResolver_GetTemplateResolutionResultForListOrHelpStop()
+        {
+            WriteEvent(14);
+        }
+
+        [Event(15, Keywords = Keywords.All)]
+        public void TemplateResolver_PerformCoreTemplateQueryStart(int count)
+        {
+            WriteEvent(15, count);
+        }
+
+        [Event(16, Keywords = Keywords.All)]
+        public void TemplateResolver_PerformCoreTemplateQueryStop()
+        {
+            WriteEvent(16);
+        }
+
+        [Event(17, Keywords = Keywords.All)]
+        public void TemplateResolver_IsTemplateHiddenByHostFileStart(string identity)
+        {
+            WriteEvent(17, identity);
+        }
+
+        [Event(18, Keywords = Keywords.All)]
+        public void TemplateResolver_IsTemplateHiddenByHostFileStop(bool hidden)
+        {
+            WriteEvent(18, hidden ? 1 : 0);
         }
 
         #endregion
@@ -178,6 +226,66 @@ namespace Microsoft.TemplateEngine.Utils
         public void NugetApiManager_GetPackageMetadataAsyncStop(int count)
         {
             WriteEvent(117, count);
+        }
+
+        [Event(118, Keywords = Keywords.All)]
+        public void SettingsLoader_ParseSettingsStart()
+        {
+            WriteEvent(118);
+        }
+
+        [Event(119, Keywords = Keywords.All)]
+        public void SettingsLoader_ParseSettingsStop()
+        {
+            WriteEvent(119);
+        }
+
+        [Event(120, Keywords = Keywords.All)]
+        public void SettingsLoader_FirstRunStart()
+        {
+            WriteEvent(120);
+        }
+
+        [Event(121, Keywords = Keywords.All)]
+        public void SettingsLoader_FirstRunStop()
+        {
+            WriteEvent(121);
+        }
+
+        [Event(122, Keywords = Keywords.All)]
+        public void ComponentManager_ConstructorStart()
+        {
+            WriteEvent(122);
+        }
+
+        [Event(123, Keywords = Keywords.All)]
+        public void ComponentManager_ConstructorStop()
+        {
+            WriteEvent(123);
+        }
+
+        [Event(124, Keywords = Keywords.All)]
+        public void AssemblyComponentCatalogStart()
+        {
+            WriteEvent(124);
+        }
+
+        [Event(125, Keywords = Keywords.All)]
+        public void AssemblyComponentCatalogStop()
+        {
+            WriteEvent(125);
+        }
+
+        [Event(126, Keywords = Keywords.All)]
+        public void ComponentManager_RegisterManyStart()
+        {
+            WriteEvent(126);
+        }
+
+        [Event(127, Keywords = Keywords.All)]
+        public void ComponentManager_RegisterManyStop()
+        {
+            WriteEvent(127);
         }
 
         #endregion

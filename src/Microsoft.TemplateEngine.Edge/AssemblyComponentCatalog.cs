@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Microsoft.TemplateEngine.Abstractions;
+using Microsoft.TemplateEngine.Utils;
 
 namespace Microsoft.TemplateEngine.Edge
 {
@@ -53,6 +54,8 @@ namespace Microsoft.TemplateEngine.Edge
                 return;
             }
 
+            TemplateEngineEventSource.Log.AssemblyComponentCatalogStart();
+
             Dictionary<Guid, Func<Type>> builder = new Dictionary<Guid, Func<Type>>();
 
             foreach (Assembly asm in _assemblies)
@@ -76,6 +79,8 @@ namespace Microsoft.TemplateEngine.Edge
             }
 
             _lookup = builder.ToList();
+
+            TemplateEngineEventSource.Log.AssemblyComponentCatalogStop();
         }
     }
 }

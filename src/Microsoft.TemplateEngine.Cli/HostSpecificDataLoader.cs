@@ -1,6 +1,8 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using System;
+using System.Collections.Concurrent;
 using System.IO;
 using Microsoft.TemplateEngine.Abstractions;
 using Microsoft.TemplateEngine.Abstractions.Mount;
@@ -15,6 +17,9 @@ namespace Microsoft.TemplateEngine.Cli
     {
         private readonly ISettingsLoader _settingsLoader;
 
+        private readonly ConcurrentDictionary<ITemplateInfo, HostSpecificTemplateData> _cache =
+            new ConcurrentDictionary<ITemplateInfo, HostSpecificTemplateData>();
+
         public HostSpecificDataLoader(ISettingsLoader settingsLoader)
         {
             _settingsLoader = settingsLoader;
@@ -22,11 +27,17 @@ namespace Microsoft.TemplateEngine.Cli
 
         public HostSpecificTemplateData ReadHostSpecificTemplateData(ITemplateInfo templateInfo)
         {
+            return _cache.GetOrAdd(templateInfo, ReadHostSpecificTemplateDataUncached);
+        }
+
+        private HostSpecificTemplateData ReadHostSpecificTemplateDataUncached(ITemplateInfo templateInfo)
+        {
             IMountPoint? mountPoint = null;
 
             try
             {
-                if (!string.IsNullOrEmpty(templateInfo.HostConfigPlace) && _settingsLoader.TryGetMountPoint(templateInfo.MountPointUri, out mountPoint))
+                if (!string.IsNullOrEmpty(templateInfo.HostConfigPlace) &&
+                    _settingsLoader.TryGetMountPoint(templateInfo.MountPointUri, out mountPoint))
                 {
                     var file = mountPoint.FileInfo(templateInfo.HostConfigPlace);
                     if (file != null && file.Exists)
@@ -39,7 +50,7 @@ namespace Microsoft.TemplateEngine.Cli
                             jsonData = JObject.Load(jsonReader);
                         }
 
-                        return jsonData.ToObject<HostSpecificTemplateData>();
+                        return new HostSpecificTemplateData(jsonData);
                     }
                 }
             }

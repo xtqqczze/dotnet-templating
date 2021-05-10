@@ -81,6 +81,7 @@ namespace Microsoft.TemplateEngine.Cli.TemplateResolution
         {
             IReadOnlyCollection<ITemplateMatchInfo> coreMatchedTemplates;
 
+            TemplateEngineEventSource.Log.TemplateResolver_GetTemplateResolutionResultForListOrHelpStart(templateInfo.Count);
             //we need different set of templates for help and list
             //for list we need to show all exact and partial names by name
             //for help if there is an exact match by shortname or name we need to show help for that exact template and also apply default language mapping in case language is not specified
@@ -92,6 +93,7 @@ namespace Microsoft.TemplateEngine.Cli.TemplateResolution
             {
                 coreMatchedTemplates = PerformCoreTemplateQueryForHelp(templateInfo, hostDataLoader, commandInput, defaultLanguage);
             }
+            TemplateEngineEventSource.Log.TemplateResolver_GetTemplateResolutionResultForListOrHelpStop();
             return new TemplateListResolutionResult(coreMatchedTemplates);
         }
 
@@ -198,6 +200,7 @@ namespace Microsoft.TemplateEngine.Cli.TemplateResolution
         /// <returns>the collection of the templates with their match dispositions (<seealso cref="ITemplateMatchInfo"/>). The templates that do not match are not added to the collection.</returns>
         internal static IReadOnlyCollection<ITemplateMatchInfo> PerformCoreTemplateQuery(IReadOnlyList<ITemplateInfo> templateInfo, IHostSpecificDataLoader hostDataLoader, INewCommandInput commandInput, string? defaultLanguage)
         {
+            TemplateEngineEventSource.Log.TemplateResolver_PerformCoreTemplateQueryStart(templateInfo.Count);
             IReadOnlyList<ITemplateInfo> filterableTemplateInfo = SetupTemplateInfoWithGroupShortNames(templateInfo);
 
 #pragma warning disable CS0618 // Type or member is obsolete
@@ -230,6 +233,7 @@ namespace Microsoft.TemplateEngine.Cli.TemplateResolution
             //add specific template parameters matches to the list
             AddParameterMatchingToTemplates(templates, hostDataLoader, commandInput);
 
+            TemplateEngineEventSource.Log.TemplateResolver_PerformCoreTemplateQueryStop();
             return templates;
         }
 
@@ -269,6 +273,7 @@ namespace Microsoft.TemplateEngine.Cli.TemplateResolution
         /// <param name="commandInput">the command input used in CLI.</param>
         private static void AddParameterMatchingToTemplates(IReadOnlyCollection<ITemplateMatchInfo> templatesToFilter, IHostSpecificDataLoader hostDataLoader, INewCommandInput commandInput)
         {
+            TemplateEngineEventSource.Log.TemplateResolver_AddParameterMatchingToTemplatesStart();
             foreach (ITemplateMatchInfo template in templatesToFilter)
             {
                 try
@@ -363,6 +368,7 @@ namespace Microsoft.TemplateEngine.Cli.TemplateResolution
                     Reporter.Verbose.WriteLine(string.Format(LocalizableStrings.Generic_Details, ex.ToString()));
                 }
             }
+            TemplateEngineEventSource.Log.TemplateResolver_AddParameterMatchingToTemplatesStop();
         }
 
         /// <summary>

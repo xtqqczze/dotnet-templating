@@ -16,6 +16,7 @@ using Microsoft.TemplateEngine.Edge.Installers.Folder;
 using Microsoft.TemplateEngine.Edge.Installers.NuGet;
 using Microsoft.TemplateEngine.Edge.Mount.Archive;
 using Microsoft.TemplateEngine.Edge.Mount.FileSystem;
+using Microsoft.TemplateEngine.Utils;
 
 namespace Microsoft.TemplateEngine.Edge.Settings
 {
@@ -29,6 +30,7 @@ namespace Microsoft.TemplateEngine.Edge.Settings
 
         public ComponentManager(ISettingsLoader loader, SettingsStore userSettings)
         {
+            TemplateEngineEventSource.Log.ComponentManager_ConstructorStart();
             _loader = loader;
             _settings = userSettings;
             _loadLocations.AddRange(userSettings.ProbingPaths);
@@ -98,6 +100,7 @@ namespace Microsoft.TemplateEngine.Edge.Settings
                     RegisterType(components.Value());
                 }
             }
+            TemplateEngineEventSource.Log.ComponentManager_ConstructorStop();
         }
 
         internal Dictionary<Type, Dictionary<Guid, object>> ComponentCache { get; } = new Dictionary<Type, Dictionary<Guid, object>>();
@@ -142,6 +145,7 @@ namespace Microsoft.TemplateEngine.Edge.Settings
         // Save once at the end if anything was registered.
         public void RegisterMany(IEnumerable<Type> typeList)
         {
+            TemplateEngineEventSource.Log.ComponentManager_RegisterManyStart();
             bool anyRegistered = false;
 
             foreach (Type type in typeList)
@@ -153,6 +157,7 @@ namespace Microsoft.TemplateEngine.Edge.Settings
             {
                 Save();
             }
+            TemplateEngineEventSource.Log.ComponentManager_RegisterManyStop();
         }
 
         public bool TryGetComponent<T>(Guid id, out T component)
