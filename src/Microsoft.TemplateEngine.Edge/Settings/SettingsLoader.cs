@@ -22,17 +22,15 @@ namespace Microsoft.TemplateEngine.Edge.Settings
     internal sealed class SettingsLoader : ISettingsLoader, IDisposable
     {
         internal const string HostTemplateFileConfigBaseName = ".host.json";
-        private const int MaxLoadAttempts = 20;
         private static object _settingsLock = new object();
         private static object _firstRunLock = new object();
         private readonly SettingsFilePaths _paths;
         private readonly IEngineEnvironmentSettings _environmentSettings;
         private readonly Action<IEngineEnvironmentSettings>? _onFirstRun;
         private readonly Scanner _installScanner;
-        private volatile SettingsStore? _userSettings;
         private volatile TemplateCache? _userTemplateCache;
         private volatile IMountPointManager? _mountPointManager;
-        private volatile IComponentManager? _componentManager;
+        private volatile ComponentManager? _componentManager;
         private TemplatePackageManager _templatePackagesManager;
         private volatile bool _disposed;
         private bool _loaded;
@@ -94,39 +92,6 @@ namespace Microsoft.TemplateEngine.Edge.Settings
             }
         }
 
-        private SettingsStore UserSettings
-        {
-            get
-            {
-                var local = _userSettings;
-                if (local != null)
-                {
-                    return local;
-                }
-
-                lock (_settingsLock)
-                {
-                    if (_userSettings == null)
-                    {
-                        EnsureLoaded();
-                    }
-                    //EnsureLoaded sets _userSettings
-                    return _userSettings!;
-                }
-            }
-        }
-
-        public void Save()
-        {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(SettingsLoader));
-            }
-
-            JObject serialized = JObject.FromObject(UserSettings);
-            _paths.WriteAllText(_paths.SettingsFile, serialized.ToString());
-        }
-
         public Task RebuildTemplateCacheAsync(CancellationToken token)
         {
             return UpdateTemplateCacheAsync(true);
@@ -139,8 +104,7 @@ namespace Microsoft.TemplateEngine.Edge.Settings
                 throw new ObjectDisposedException(nameof(SettingsLoader));
             }
 
-            IGenerator generator;
-            if (!Components.TryGetComponent(info.GeneratorId, out generator))
+            if (!Components.TryGetComponent(info.GeneratorId, out IGenerator? generator))
             {
                 return null;
             }
@@ -171,7 +135,7 @@ namespace Microsoft.TemplateEngine.Edge.Settings
             ITemplate template;
             using (Timing.Over(_environmentSettings.Host, "Template from config"))
             {
-                if (generator.TryGetTemplateFromConfigInfo(config, out template, localeConfig, hostTemplateConfigFile, baselineName))
+                if (generator!.TryGetTemplateFromConfigInfo(config, out template, localeConfig, hostTemplateConfigFile, baselineName))
                 {
                     return template;
                 }
@@ -236,36 +200,6 @@ namespace Microsoft.TemplateEngine.Edge.Settings
 #pragma warning restore CS0618 // Type or member is obsolete
         }
 
-        public void AddProbingPath(string probeIn)
-        {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(SettingsLoader));
-            }
-
-            const int maxAttempts = 10;
-            int attemptCount = 0;
-            bool successfulWrite = false;
-
-            while (!successfulWrite && attemptCount++ < maxAttempts)
-            {
-                if (!UserSettings.ProbingPaths.Add(probeIn))
-                {
-                    return;
-                }
-
-                try
-                {
-                    Save();
-                    successfulWrite = true;
-                }
-                catch
-                {
-                    Task.Delay(10).Wait();
-                }
-            }
-        }
-
         public bool TryGetMountPoint(string mountPointUri, out IMountPoint mountPoint)
         {
             if (_disposed)
@@ -281,7 +215,6 @@ namespace Microsoft.TemplateEngine.Edge.Settings
             {
                 _paths.Delete(_paths.BaseDir);
                 _loaded = false;
-                _userSettings = null;
                 _componentManager = null;
                 _mountPointManager = null;
             }
@@ -330,57 +263,9 @@ namespace Microsoft.TemplateEngine.Edge.Settings
                     return;
                 }
 
-                string? userSettings = null;
-                using (Timing.Over(_environmentSettings.Host, "Read settings"))
-                {
-                    for (int i = 0; i < MaxLoadAttempts; ++i)
-                    {
-                        try
-                        {
-                            userSettings = _paths.ReadAllText(_paths.SettingsFile, "{}");
-                            break;
-                        }
-                        catch (IOException)
-                        {
-                            if (i == MaxLoadAttempts - 1)
-                            {
-                                throw;
-                            }
-
-                            Task.Delay(2).Wait();
-                        }
-                    }
-                }
-
-                JObject parsed;
-                using (Timing.Over(_environmentSettings.Host, "Parse settings"))
-                {
-                    try
-                    {
-                        parsed = JObject.Parse(userSettings);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new EngineInitializationException("Error parsing the user settings file", "Settings File", ex);
-                    }
-                }
-
-                using (Timing.Over(_environmentSettings.Host, "Deserialize user settings"))
-                {
-                    _userSettings = new SettingsStore(parsed);
-                }
-
-                using (Timing.Over(_environmentSettings.Host, "Init probing paths"))
-                {
-                    if (_userSettings.ProbingPaths.Count == 0)
-                    {
-                        _userSettings.ProbingPaths.Add(_paths.Content);
-                    }
-                }
-
                 using (Timing.Over(_environmentSettings.Host, "Init Component manager"))
                 {
-                    _componentManager = new ComponentManager(this, _userSettings);
+                    _componentManager = new ComponentManager(this);
                 }
 
                 using (Timing.Over(_environmentSettings.Host, "Init MountPoint manager"))
@@ -483,6 +368,7 @@ namespace Microsoft.TemplateEngine.Edge.Settings
                 );
             JObject serialized = JObject.FromObject(cache);
             _paths.WriteAllText(_paths.TemplateCacheFile, serialized.ToString());
+            _componentManager!.UpdateUserComponents(scanResults);
             return _userTemplateCache = cache;
         }
     }

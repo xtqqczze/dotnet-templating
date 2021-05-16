@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.TemplateEngine.Abstractions;
@@ -31,16 +30,6 @@ namespace Microsoft.TemplateEngine.IDE
             _host = host ?? throw new ArgumentNullException(nameof(host));
             _engineEnvironmentSettings = new EngineEnvironmentSettings(host, virtualizeSettings: virtualizeConfiguration, onFirstRun: onFirstRun);
             _templateCreator = new TemplateCreator(_engineEnvironmentSettings);
-        }
-
-        public void Register(Type type)
-        {
-            _engineEnvironmentSettings.SettingsLoader.Components.Register(type);
-        }
-
-        public void Register(Assembly assembly)
-        {
-            _engineEnvironmentSettings.SettingsLoader.Components.RegisterMany(assembly.GetTypes());
         }
 
         [Obsolete("Use " + nameof(GetTemplatesAsync) + "instead")]

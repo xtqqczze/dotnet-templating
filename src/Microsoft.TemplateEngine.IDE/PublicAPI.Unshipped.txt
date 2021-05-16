@@ -12,8 +12,6 @@ Microsoft.TemplateEngine.IDE.Bootstrapper.Install(string! path) -> void
 Microsoft.TemplateEngine.IDE.Bootstrapper.Install(System.Collections.Generic.IEnumerable<string!>! paths) -> void
 Microsoft.TemplateEngine.IDE.Bootstrapper.InstallTemplatePackagesAsync(System.Collections.Generic.IEnumerable<Microsoft.TemplateEngine.Abstractions.Installer.InstallRequest!>! installRequests, Microsoft.TemplateEngine.Abstractions.TemplatePackage.InstallationScope scope = Microsoft.TemplateEngine.Abstractions.TemplatePackage.InstallationScope.Global, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<Microsoft.TemplateEngine.Abstractions.Installer.InstallResult!>!>!
 Microsoft.TemplateEngine.IDE.Bootstrapper.ListTemplates(bool exactMatchesOnly, params System.Func<Microsoft.TemplateEngine.Abstractions.ITemplateInfo!, Microsoft.TemplateEngine.Edge.Template.MatchInfo?>![]! filters) -> System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyCollection<Microsoft.TemplateEngine.Edge.Template.IFilteredTemplateInfo!>!>!
-Microsoft.TemplateEngine.IDE.Bootstrapper.Register(System.Reflection.Assembly! assembly) -> void
-Microsoft.TemplateEngine.IDE.Bootstrapper.Register(System.Type! type) -> void
 Microsoft.TemplateEngine.IDE.Bootstrapper.Uninstall(params string![]! paths) -> System.Collections.Generic.IEnumerable<string!>!
 Microsoft.TemplateEngine.IDE.Bootstrapper.Uninstall(string! path) -> System.Collections.Generic.IEnumerable<string!>!
 Microsoft.TemplateEngine.IDE.Bootstrapper.Uninstall(System.Collections.Generic.IEnumerable<string!>! paths) -> System.Collections.Generic.IEnumerable<string!>!

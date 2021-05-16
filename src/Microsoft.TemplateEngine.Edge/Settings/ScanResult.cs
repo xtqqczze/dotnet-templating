@@ -11,13 +11,29 @@ namespace Microsoft.TemplateEngine.Edge.Settings
 {
     public class ScanResult
     {
-        public static readonly ScanResult Empty = new(Array.Empty<ITemplate>(), Array.Empty<ILocalizationLocator>());
+        public static readonly ScanResult Empty = new(
+            string.Empty,
+            Array.Empty<ITemplate>(),
+            Array.Empty<ILocalizationLocator>(),
+            Array.Empty<(Type InterfaceType, IIdentifiedComponent Instance)>()
+            );
 
-        public ScanResult(IReadOnlyList<ITemplate> templates, IReadOnlyList<ILocalizationLocator> localizations)
+        public ScanResult(
+            string mountPointUri,
+            IReadOnlyList<ITemplate> templates,
+            IReadOnlyList<ILocalizationLocator> localizations,
+            IReadOnlyList<(Type InterfaceType, IIdentifiedComponent Instance)> components
+            )
         {
+            MountPointUri = mountPointUri;
             Templates = templates;
             Localizations = localizations;
+            Components = components;
         }
+
+        public string MountPointUri { get; }
+
+        public IReadOnlyList<(Type InterfaceType, IIdentifiedComponent Instance)> Components { get; }
 
         public IReadOnlyList<ILocalizationLocator> Localizations { get; }
 

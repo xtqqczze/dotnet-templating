@@ -13,8 +13,6 @@ using System.Runtime.Loader;
 #endif
 using Microsoft.TemplateEngine.Abstractions;
 using Microsoft.TemplateEngine.Abstractions.Mount;
-using Microsoft.TemplateEngine.Edge.Mount.FileSystem;
-using Microsoft.TemplateEngine.Utils;
 
 namespace Microsoft.TemplateEngine.Edge.Settings
 {
@@ -35,142 +33,81 @@ namespace Microsoft.TemplateEngine.Edge.Settings
             {
                 throw new ArgumentException($"{nameof(sourceLocation)} should not be null or empty");
             }
-            MountPointScanSource source = GetOrCreateMountPointScanInfoForInstallSource(sourceLocation);
 
-            ScanForComponents(source);
-            var scanResult = ScanMountPointForTemplatesAndLangpacks(source);
+            if (!_environmentSettings.SettingsLoader.TryGetMountPoint(sourceLocation, out var mountPoint))
+            {
+                throw new Exception($"Source location {sourceLocation} is not supported, or doesn't exist.");
+            }
 
-            source.MountPoint.Dispose();
-
-            return scanResult;
+            using (mountPoint)
+            {
+                var (templates, localisations) = ScanMountPointForTemplatesAndLangpacks(mountPoint);
+                var components = ScanForComponents(mountPoint);
+                return new ScanResult(mountPoint.MountPointUri, templates, localisations, components);
+            }
         }
 
-        private MountPointScanSource GetOrCreateMountPointScanInfoForInstallSource(string sourceLocation)
+        private IReadOnlyList<(Type InterfaceType, IIdentifiedComponent Instance)> ScanForComponents(IMountPoint mountPoint)
         {
-            foreach (IMountPointFactory factory in _environmentSettings.SettingsLoader.Components.OfType<IMountPointFactory>().ToList())
-            {
-                if (factory.TryMount(_environmentSettings, null, sourceLocation, out IMountPoint mountPoint))
-                {
-                    // file-based and not originating in the scratch dir.
-                    bool isLocalFlatFileSource = mountPoint is FileSystemMountPoint
-                                                && !sourceLocation.StartsWith(_paths.ScratchDir);
-
-                    return new MountPointScanSource(
-                        location: sourceLocation,
-                        mountPoint: mountPoint,
-                        shouldStayInOriginalLocation: isLocalFlatFileSource,
-                        foundComponents: false,
-                        foundTemplates: false
-                    );
-                }
-            }
-            throw new Exception($"source location {sourceLocation} is not supported, or doesn't exist.");
-        }
-
-        private void ScanForComponents(MountPointScanSource source)
-        {
-            _ = source ?? throw new ArgumentNullException(nameof(source));
-
-            bool isCopiedIntoContentDirectory;
-
-            if (!source.MountPoint.Root.EnumerateFiles("*.dll", SearchOption.AllDirectories).Any())
-            {
-                return;
-            }
-
-            string? actualScanPath;
-            if (!source.ShouldStayInOriginalLocation)
-            {
-                if (!TryCopyForNonFileSystemBasedMountPoints(source.MountPoint, source.Location, _paths.Content, true, out actualScanPath) || actualScanPath == null)
-                {
-                    return;
-                }
-
-                isCopiedIntoContentDirectory = true;
-            }
-            else
-            {
-                actualScanPath = source.Location;
-                isCopiedIntoContentDirectory = false;
-            }
-
-            foreach (KeyValuePair<string, Assembly> asm in LoadAllFromPath(out IEnumerable<string> failures, actualScanPath))
+            List<(Type InterfaceType, IIdentifiedComponent Instance)>? components = null;
+            foreach (var asm in LoadAllFromPath(mountPoint))
             {
                 try
                 {
-                    IReadOnlyList<Type> typeList = asm.Value.GetTypes();
-
-                    if (typeList.Count > 0)
+                    foreach (var type in asm.Assembly.GetTypes())
                     {
-                        // TODO: figure out what to do with probing path registration when components are not found.
-                        // They need to be registered for dependent assemblies, not just when an assembly can be loaded.
-                        // We'll need to figure out how to know when that is.
-                        _environmentSettings.SettingsLoader.Components.RegisterMany(typeList);
-                        _environmentSettings.SettingsLoader.AddProbingPath(Path.GetDirectoryName(asm.Key));
-                        source.FoundComponents = true;
-                    }
-                }
-                catch
-                {
-                    // exceptions here are ok, due to dependency errors, etc.
-                }
-            }
+                        foreach (var (interfaceType, instance) in ScanType(type))
+                        {
+                            if (components == null)
+                            {
+                                components = new List<(Type InterfaceType, IIdentifiedComponent Instance)>();
+                            }
 
-            if (!source.FoundComponents && isCopiedIntoContentDirectory)
-            {
-                try
-                {
-                    // The source was copied to content and then scanned for components.
-                    // Nothing was found, and this is a copy that now has no use, so delete it.
-                    // Note: no mount point was created for this copy, so no need to release it.
-                    _environmentSettings.Host.FileSystem.DirectoryDelete(actualScanPath, true);
+                            components.Add((interfaceType, instance));
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
-                    _environmentSettings.Host.LogDiagnosticMessage($"During ScanForComponents() cleanup, couldn't delete source copied into the content dir: {actualScanPath}", "Install");
-                    _environmentSettings.Host.LogDiagnosticMessage($"\tError: {ex.Message}", "Install");
+                    _environmentSettings.Host.LogDiagnosticMessage(ex.ToString(), null);
                 }
+            }
+            if (components != null)
+            {
+                return components;
+            }
+            return Array.Empty<(Type InterfaceType, IIdentifiedComponent Instance)>();
+        }
+
+        private IEnumerable<(Type InterfaceType, IIdentifiedComponent Instance)> ScanType(Type type)
+        {
+            if (!typeof(IIdentifiedComponent).GetTypeInfo().IsAssignableFrom(type) || type.GetTypeInfo().GetConstructor(Type.EmptyTypes) == null || !type.GetTypeInfo().IsClass)
+            {
+                yield break;
+            }
+
+            IReadOnlyList<Type> interfaceTypesToRegisterFor = type.GetTypeInfo().ImplementedInterfaces.Where(x => x != typeof(IIdentifiedComponent) && typeof(IIdentifiedComponent).GetTypeInfo().IsAssignableFrom(x)).ToList();
+            if (interfaceTypesToRegisterFor.Count == 0)
+            {
+                yield break;
+            }
+
+            IIdentifiedComponent instance = (IIdentifiedComponent)Activator.CreateInstance(type);
+
+            foreach (Type interfaceType in interfaceTypesToRegisterFor)
+            {
+                yield return (interfaceType, instance);
             }
         }
 
-        private bool TryCopyForNonFileSystemBasedMountPoints(IMountPoint mountPoint, string sourceLocation, string targetBasePath, bool expandIfArchive, out string? diskPath)
+        private (List<ITemplate>, List<ILocalizationLocator>) ScanMountPointForTemplatesAndLangpacks(IMountPoint mountPoint)
         {
-            string targetPath = Path.Combine(targetBasePath, Path.GetFileName(sourceLocation));
-
-            try
-            {
-                if (expandIfArchive)
-                {
-                    mountPoint.Root.CopyTo(targetPath);
-                }
-                else
-                {
-                    _environmentSettings.Host.FileSystem.CreateDirectory(targetBasePath); // creates Packages/ or Content/ if needed
-                    _paths.Copy(sourceLocation, targetPath);
-                }
-            }
-            catch (IOException)
-            {
-                _environmentSettings.Host.LogDiagnosticMessage($"Error copying scanLocation: {sourceLocation} into the target dir: {targetPath}", "Install");
-                diskPath = null;
-                return false;
-            }
-
-            diskPath = targetPath;
-            return true;
-        }
-
-        private ScanResult ScanMountPointForTemplatesAndLangpacks(MountPointScanSource source)
-        {
-            _ = source ?? throw new ArgumentNullException(nameof(source));
-            // look for things to install
-
             var templates = new List<ITemplate>();
             var localizationLocators = new List<ILocalizationLocator>();
 
             foreach (IGenerator generator in _environmentSettings.SettingsLoader.Components.OfType<IGenerator>())
             {
-                IList<ITemplate> templateList = generator.GetTemplatesAndLangpacksFromDir(source.MountPoint, out IList<ILocalizationLocator> localizationInfo);
+                IList<ITemplate> templateList = generator.GetTemplatesAndLangpacksFromDir(mountPoint, out IList<ILocalizationLocator> localizationInfo);
 
                 foreach (ILocalizationLocator locator in localizationInfo)
                 {
@@ -181,76 +118,48 @@ namespace Microsoft.TemplateEngine.Edge.Settings
                 {
                     templates.Add(template);
                 }
-
-                source.FoundTemplates |= templateList.Count > 0 || localizationInfo.Count > 0;
             }
 
-            return new ScanResult(templates, localizationLocators);
+            return (templates, localizationLocators);
         }
 
-        /// <summary>
-        /// Loads assemblies for components from the given <paramref name="path"/>.
-        /// </summary>
-        /// <param name="loadFailures">Errors happened when loading assemblies.</param>
-        /// <param name="path">The path to load assemblies from.</param>
-        /// <param name="pattern">Filename pattern to use when searching for files.</param>
-        /// <param name="searchOption"><see cref="SearchOption"/> to use when searching for files.</param>
-        /// <returns>The list of loaded assemblies in format (filename, loaded assembly).</returns>
-        private IEnumerable<KeyValuePair<string, Assembly>> LoadAllFromPath(
-            out IEnumerable<string> loadFailures,
-            string path,
-            string pattern = "*.dll",
-            SearchOption searchOption = SearchOption.AllDirectories)
+        private IEnumerable<(string FilePath, Assembly Assembly)> LoadAllFromPath(IMountPoint mountPoint)
         {
-            List<KeyValuePair<string, Assembly>> loaded = new List<KeyValuePair<string, Assembly>>();
-            List<string> failures = new List<string>();
-
-            foreach (string file in _paths.EnumerateFiles(path, pattern, searchOption))
+            foreach (var file in mountPoint.Root.EnumerateFiles("*.Components.dll", SearchOption.AllDirectories))
             {
+                Assembly assembly;
                 try
                 {
-                    Assembly? assembly = null;
-
 #if !NETFULL
-                    if (file.IndexOf("netcoreapp", StringComparison.OrdinalIgnoreCase) > -1 || file.IndexOf("netstandard", StringComparison.OrdinalIgnoreCase) > -1)
+                    using (Stream fileStream = file.OpenRead())
                     {
-                        using (Stream fileStream = _environmentSettings.Host.FileSystem.OpenRead(file))
-                        {
-                            assembly = AssemblyLoadContext.Default.LoadFromStream(fileStream);
-                        }
+                        assembly = AssemblyLoadContext.Default.LoadFromStream(fileStream);
                     }
 #else
-                    if (file.IndexOf("net4", StringComparison.OrdinalIgnoreCase) > -1)
+                    using (Stream fileStream = file.OpenRead())
+                    using (MemoryStream ms = new MemoryStream())
                     {
-                        byte[] fileBytes = _environmentSettings.Host.FileSystem.ReadAllBytes(file);
-                        assembly = Assembly.Load(fileBytes);
+                        fileStream.CopyTo(ms);
+                        assembly = Assembly.Load(ms.ToArray());
                     }
 #endif
-
-                    if (assembly != null)
-                    {
-                        loaded.Add(new KeyValuePair<string, Assembly>(file, assembly));
-                    }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    failures.Add(file);
+                    _environmentSettings.Host.LogMessage($"Failed to load {file}." + ex.ToString());
+                    continue;
                 }
+                yield return (file.FullPath, assembly);
             }
-
-            loadFailures = failures;
-            return loaded;
         }
 
         private class MountPointScanSource
         {
-            public MountPointScanSource(string location, IMountPoint mountPoint, bool shouldStayInOriginalLocation, bool foundComponents, bool foundTemplates)
+            public MountPointScanSource(string location, IMountPoint mountPoint, bool shouldStayInOriginalLocation)
             {
                 Location = location;
                 MountPoint = mountPoint;
                 ShouldStayInOriginalLocation = shouldStayInOriginalLocation;
-                FoundComponents = foundComponents;
-                FoundTemplates = foundTemplates;
             }
 
             public string Location { get; }
@@ -258,18 +167,6 @@ namespace Microsoft.TemplateEngine.Edge.Settings
             public IMountPoint MountPoint { get; }
 
             public bool ShouldStayInOriginalLocation { get; }
-
-            public bool FoundComponents { get; set; }
-
-            public bool FoundTemplates { get; set; }
-
-            public bool AnythingFound
-            {
-                get
-                {
-                    return FoundTemplates || FoundComponents;
-                }
-            }
         }
     }
 }

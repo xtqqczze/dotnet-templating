@@ -9,7 +9,7 @@ namespace Microsoft.TemplateEngine.Abstractions
 {
     public interface ITemplateEngineHost
     {
-        IReadOnlyList<KeyValuePair<Guid, Func<Type>>> BuiltInComponents { get; }
+        IReadOnlyList<(Type Type, IIdentifiedComponent Instance)> BuiltInComponents { get; }
 
         IPhysicalFileSystem FileSystem { get; }
 

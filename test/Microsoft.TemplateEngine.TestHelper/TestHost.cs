@@ -20,7 +20,7 @@ namespace Microsoft.TemplateEngine.TestHelper
         {
             HostIdentifier = string.IsNullOrWhiteSpace(hostIdentifier) ? "TestRunner" : hostIdentifier;
             Version = string.IsNullOrWhiteSpace(version) ? "1.0.0" : version;
-            BuiltInComponents = new List<KeyValuePair<Guid, Func<Type>>>();
+            BuiltInComponents = new List<(Type, IIdentifiedComponent)>();
             HostParamDefaults = new Dictionary<string, string>();
             FileSystem = new PhysicalFileSystem();
         }
@@ -53,7 +53,7 @@ namespace Microsoft.TemplateEngine.TestHelper
 
         public string Version { get; }
 
-        public IReadOnlyList<KeyValuePair<Guid, Func<Type>>> BuiltInComponents { get; set; }
+        public IReadOnlyList<(Type, IIdentifiedComponent)> BuiltInComponents { get; set; }
 
         public bool TryGetHostParamDefault(string paramName, out string value)
         {

@@ -39,7 +39,7 @@ namespace Microsoft.TemplateEngine.Cli.UnitTests.CliMocks
             // create the sources initially
             for (int i = 0; i < dataForSources.Count; i++)
             {
-                environmentSettings.SettingsLoader.Components.Register(typeof(MockTemplateSearchSource));
+                environmentSettings.SettingsLoader.Components.AddComponent(typeof(ITemplateSearchSource), new MockTemplateSearchSource());
             }
 
             // assign the source data to the sources, mapping the source to its id

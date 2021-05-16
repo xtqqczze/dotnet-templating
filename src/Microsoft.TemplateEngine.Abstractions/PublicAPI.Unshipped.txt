@@ -97,7 +97,6 @@ Microsoft.TemplateEngine.Abstractions.IPrioritizedComponent
 Microsoft.TemplateEngine.Abstractions.IPrioritizedComponent.Priority.get -> int
 Microsoft.TemplateEngine.Abstractions.ISearchPackFilter
 Microsoft.TemplateEngine.Abstractions.ISettingsLoader
-Microsoft.TemplateEngine.Abstractions.ISettingsLoader.AddProbingPath(string! probeIn) -> void
 Microsoft.TemplateEngine.Abstractions.ISettingsLoader.Components.get -> Microsoft.TemplateEngine.Abstractions.IComponentManager!
 Microsoft.TemplateEngine.Abstractions.ISettingsLoader.EnvironmentSettings.get -> Microsoft.TemplateEngine.Abstractions.IEngineEnvironmentSettings!
 Microsoft.TemplateEngine.Abstractions.ISettingsLoader.FindBestHostTemplateConfigFile(Microsoft.TemplateEngine.Abstractions.Mount.IFileSystemInfo! config) -> Microsoft.TemplateEngine.Abstractions.Mount.IFile?
@@ -106,7 +105,6 @@ Microsoft.TemplateEngine.Abstractions.ISettingsLoader.GetTemplatesAsync(System.T
 Microsoft.TemplateEngine.Abstractions.ISettingsLoader.LoadTemplate(Microsoft.TemplateEngine.Abstractions.ITemplateInfo! info, string! baselineName) -> Microsoft.TemplateEngine.Abstractions.ITemplate?
 Microsoft.TemplateEngine.Abstractions.ISettingsLoader.RebuildTemplateCacheAsync(System.Threading.CancellationToken token) -> System.Threading.Tasks.Task!
 Microsoft.TemplateEngine.Abstractions.ISettingsLoader.ResetHostSettings() -> void
-Microsoft.TemplateEngine.Abstractions.ISettingsLoader.Save() -> void
 Microsoft.TemplateEngine.Abstractions.ISettingsLoader.TemplatePackagesManager.get -> Microsoft.TemplateEngine.Abstractions.TemplatePackage.ITemplatePackageManager!
 Microsoft.TemplateEngine.Abstractions.ISettingsLoader.TryGetMountPoint(string! mountPointUri, out Microsoft.TemplateEngine.Abstractions.Mount.IMountPoint! mountPoint) -> bool
 Microsoft.TemplateEngine.Abstractions.IShortNameList
@@ -207,10 +205,10 @@ Microsoft.TemplateEngine.Abstractions.TemplateParameterPriority.Suggested = 1 ->
 ~Microsoft.TemplateEngine.Abstractions.IAllowDefaultIfOptionWithoutValue.DefaultIfOptionWithoutValue.set -> void
 ~Microsoft.TemplateEngine.Abstractions.IBaselineInfo.DefaultOverrides.get -> System.Collections.Generic.IReadOnlyDictionary<string, string>
 ~Microsoft.TemplateEngine.Abstractions.IBaselineInfo.Description.get -> string
-~Microsoft.TemplateEngine.Abstractions.IComponentManager.OfType<T>() -> System.Collections.Generic.IEnumerable<T>
-~Microsoft.TemplateEngine.Abstractions.IComponentManager.Register(System.Type type) -> void
-~Microsoft.TemplateEngine.Abstractions.IComponentManager.RegisterMany(System.Collections.Generic.IEnumerable<System.Type> typeList) -> void
-~Microsoft.TemplateEngine.Abstractions.IComponentManager.TryGetComponent<T>(System.Guid id, out T component) -> bool
+Microsoft.TemplateEngine.Abstractions.IComponentManager.AddComponent(System.Type! interfaceType, Microsoft.TemplateEngine.Abstractions.IIdentifiedComponent! instance) -> void
+Microsoft.TemplateEngine.Abstractions.IComponentManager.OfType<T>() -> System.Collections.Generic.IEnumerable<T!>!
+Microsoft.TemplateEngine.Abstractions.IComponentManager.RemoveComponent(System.Type! interfaceType, Microsoft.TemplateEngine.Abstractions.IIdentifiedComponent! instance) -> void
+Microsoft.TemplateEngine.Abstractions.IComponentManager.TryGetComponent<T>(System.Guid id, out T? component) -> bool
 ~Microsoft.TemplateEngine.Abstractions.ICreationEffects.CreationResult.get -> Microsoft.TemplateEngine.Abstractions.ICreationResult
 ~Microsoft.TemplateEngine.Abstractions.ICreationEffects.FileChanges.get -> System.Collections.Generic.IReadOnlyList<Microsoft.TemplateEngine.Abstractions.IFileChange>
 ~Microsoft.TemplateEngine.Abstractions.ICreationEffects2.CreationResult.get -> Microsoft.TemplateEngine.Abstractions.ICreationResult
@@ -284,7 +282,7 @@ Microsoft.TemplateEngine.Abstractions.TemplateParameterPriority.Suggested = 1 ->
 ~Microsoft.TemplateEngine.Abstractions.ITemplate.Generator.get -> Microsoft.TemplateEngine.Abstractions.IGenerator
 ~Microsoft.TemplateEngine.Abstractions.ITemplate.LocaleConfiguration.get -> Microsoft.TemplateEngine.Abstractions.Mount.IFileSystemInfo
 ~Microsoft.TemplateEngine.Abstractions.ITemplate.TemplateSourceRoot.get -> Microsoft.TemplateEngine.Abstractions.Mount.IDirectory
-~Microsoft.TemplateEngine.Abstractions.ITemplateEngineHost.BuiltInComponents.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.KeyValuePair<System.Guid, System.Func<System.Type>>>
+~Microsoft.TemplateEngine.Abstractions.ITemplateEngineHost.BuiltInComponents.get -> System.Collections.Generic.IReadOnlyList<(System.Type Type, Microsoft.TemplateEngine.Abstractions.IIdentifiedComponent Instance)>
 ~Microsoft.TemplateEngine.Abstractions.ITemplateEngineHost.FallbackHostTemplateConfigNames.get -> System.Collections.Generic.IReadOnlyList<string>
 ~Microsoft.TemplateEngine.Abstractions.ITemplateEngineHost.FileSystem.get -> Microsoft.TemplateEngine.Abstractions.PhysicalFileSystem.IPhysicalFileSystem
 ~Microsoft.TemplateEngine.Abstractions.ITemplateEngineHost.HostIdentifier.get -> string

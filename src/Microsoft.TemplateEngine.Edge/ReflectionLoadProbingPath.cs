@@ -1,62 +1,42 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+#nullable enable
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Microsoft.TemplateEngine.Abstractions;
+using Microsoft.TemplateEngine.Abstractions.Mount;
 
 #if !NETFULL
-
 using System.Runtime.Loader;
-
 #endif
 
 namespace Microsoft.TemplateEngine.Edge
 {
     public class ReflectionLoadProbingPath
     {
-        private static readonly ConcurrentDictionary<string, Assembly> LoadedAssemblies = new ConcurrentDictionary<string, Assembly>(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, Assembly?> _loadedAssemblies = new();
+        private ISettingsLoader _settingsLoader;
+        private string _mountPointUri;
 
-        private static readonly List<ReflectionLoadProbingPath> Instance = new List<ReflectionLoadProbingPath>();
-
-        private readonly string _path;
-
-        private ReflectionLoadProbingPath(string path)
+        private ReflectionLoadProbingPath(ISettingsLoader settingsLoader, string mountPointUri)
         {
-            _path = path;
-        }
-
-        public static void Add(string basePath)
-        {
-            Instance.Add(new ReflectionLoadProbingPath(basePath));
-#if !NETFULL
-            AssemblyLoadContext.Default.Resolving += Resolving;
-#else
-            AppDomain.CurrentDomain.AssemblyResolve += Resolving;
-#endif
-        }
-
-        public static bool HasLoaded(string assemblyName)
-        {
-            return LoadedAssemblies.ContainsKey(assemblyName);
-        }
-
-        public static void Reset()
-        {
-            Instance.Clear();
+            _settingsLoader = settingsLoader;
+            _mountPointUri = mountPointUri;
         }
 
 #if !NETFULL
-
-        private static Assembly SelectBestMatch(AssemblyLoadContext loadContext, AssemblyName match, IEnumerable<FileInfo> candidates)
+        private Assembly? SelectBestMatch(AssemblyLoadContext loadContext, AssemblyName match, IEnumerable<IFile> candidates)
 #else
-        private static Assembly SelectBestMatch(object sender, AssemblyName match, IEnumerable<FileInfo> candidates)
+        private static Assembly? SelectBestMatch(object sender, AssemblyName match, IEnumerable<IFile> candidates)
 #endif
         {
-            return LoadedAssemblies.GetOrAdd(match.ToString(), n =>
+            return _loadedAssemblies.GetOrAdd(match.ToString(), n =>
             {
                 Stack<string> bestMatch = new Stack<string>();
                 byte[] pk = match.GetPublicKey();
@@ -66,7 +46,7 @@ namespace Microsoft.TemplateEngine.Edge
                 bool buildMatch = false;
                 bool revisionMatch = false;
 
-                foreach (FileInfo file in candidates)
+                foreach (IFile file in candidates)
                 {
                     if (!file.Exists)
                     {
@@ -74,9 +54,9 @@ namespace Microsoft.TemplateEngine.Edge
                     }
 
 #if !NETFULL
-                    AssemblyName candidateName = AssemblyLoadContext.GetAssemblyName(file.FullName);
+                    AssemblyName candidateName = AssemblyLoadContext.GetAssemblyName(file.FullPath);
 #else
-                    AssemblyName candidateName = AssemblyName.GetAssemblyName(file.FullName);
+                    AssemblyName candidateName = AssemblyName.GetAssemblyName(file.FullPath);
 #endif
 
                     //Only pursue things that may have the same identity
@@ -178,7 +158,7 @@ namespace Microsoft.TemplateEngine.Edge
                         continue;
                     }
 
-                    bestMatch.Push(file.FullName);
+                    bestMatch.Push(file.FullPath);
                 }
 
                 while (bestMatch.Count > 0)
@@ -204,9 +184,9 @@ namespace Microsoft.TemplateEngine.Edge
 
 #if !NETFULL
 
-        private static Assembly Resolving(AssemblyLoadContext assemblyLoadContext, AssemblyName assemblyName)
+        private static Assembly? Resolving(AssemblyLoadContext assemblyLoadContext, AssemblyName assemblyName)
 #else
-        private static Assembly Resolving(object sender, ResolveEventArgs resolveEventArgs)
+        private static Assembly? Resolving(object sender, ResolveEventArgs resolveEventArgs)
 #endif
         {
 #if !NETFULL
@@ -218,26 +198,16 @@ namespace Microsoft.TemplateEngine.Edge
 
             foreach (ReflectionLoadProbingPath selector in Instance)
             {
-                DirectoryInfo info = new DirectoryInfo(Path.Combine(selector._path, stringName));
-                Assembly found = null;
+                var info = selector.GetRootDir();
+                Assembly? found = null;
 
-                if (info.Exists)
+                if (info?.Exists ?? false)
                 {
-                    IEnumerable<FileInfo> files = info.EnumerateFiles($"{stringName}.dll", SearchOption.AllDirectories)
-                        .Where(x => x.FullName.IndexOf($"{Path.DirectorySeparatorChar}lib{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase) > -1
-                        && (x.FullName.IndexOf($"{Path.DirectorySeparatorChar}netstandard", StringComparison.OrdinalIgnoreCase) > -1
-                        || x.FullName.IndexOf($"{Path.DirectorySeparatorChar}netcoreapp", StringComparison.OrdinalIgnoreCase) > -1))
-                        .OrderByDescending(x => x.FullName);
-#if !NETFULL
-                    found = SelectBestMatch(assemblyLoadContext, assemblyName, files);
-#else
-                    found = SelectBestMatch(sender, assemblyName, files);
-#endif
-                }
-                else if (File.Exists(Path.Combine(selector._path, stringName + ".dll")))
-                {
-                    FileInfo f = new FileInfo(Path.Combine(selector._path, stringName + ".dll"));
-                    FileInfo[] files = { f };
+                    IEnumerable<IFile> files = info.EnumerateFiles($"{stringName}.dll", SearchOption.AllDirectories)
+                        .Where(x => x.FullPath.IndexOf($"{Path.DirectorySeparatorChar}lib{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase) > -1
+                        && (x.FullPath.IndexOf($"{Path.DirectorySeparatorChar}netstandard", StringComparison.OrdinalIgnoreCase) > -1
+                        || x.FullPath.IndexOf($"{Path.DirectorySeparatorChar}netcoreapp", StringComparison.OrdinalIgnoreCase) > -1))
+                        .OrderByDescending(x => x.FullPath);
 #if !NETFULL
                     found = SelectBestMatch(assemblyLoadContext, assemblyName, files);
 #else

@@ -24,15 +24,8 @@ namespace Microsoft.TemplateEngine.Edge.UnitTests
         {
             var environmentSettings = _environmentSettingsHelper.CreateEnvironment(virtualize: true, loadDefaultGenerator: false);
             var componentManager = new ComponentManager(
-                new MockSettingsLoader(environmentSettings),
-                new SettingsStore());
+                new MockSettingsLoader(environmentSettings));
 
-            var assemblyCatalog = new AssemblyComponentCatalog(new[] { typeof(ComponentManager).Assembly });
-            var expectedTypeNames = assemblyCatalog.Select(pair => pair.Value().FullName).OrderBy(name => name);
-
-            var actualTypeNames = componentManager.ComponentCache.Values.SelectMany(t => t.Values).Select(o => o.GetType().FullName).OrderBy(name => name);
-
-            Assert.Equal(expectedTypeNames, actualTypeNames);
             Assert.Equal(2, componentManager.OfType<IInstallerFactory>().Count());
         }
     }

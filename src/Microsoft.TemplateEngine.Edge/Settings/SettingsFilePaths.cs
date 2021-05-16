@@ -16,7 +16,6 @@ namespace Microsoft.TemplateEngine.Edge.Settings
         private readonly IEngineEnvironmentSettings _environmentSettings;
         private string? _aliasesFile;
         private string? _firstRunCookie;
-        private string? _scratchDir;
         private string? _settingsFile;
         private string? _contentDir;
         private string? _templatesCacheFile;
@@ -34,9 +33,7 @@ namespace Microsoft.TemplateEngine.Edge.Settings
 
         internal string FirstRunCookie => GetOrComputePath(ref _firstRunCookie, BaseDir, ".firstrun");
 
-        internal string ScratchDir => GetOrComputePath(ref _scratchDir, BaseDir, "scratch");
-
-        internal string SettingsFile => GetOrComputePath(ref _settingsFile, BaseDir, "settings.json");
+        internal string ComponentsFile => GetOrComputePath(ref _settingsFile, BaseDir, "components.json");
 
         internal string TemplateCacheFile => GetOrComputePath(ref _templatesCacheFile, BaseDir, "templatecache.json");
 

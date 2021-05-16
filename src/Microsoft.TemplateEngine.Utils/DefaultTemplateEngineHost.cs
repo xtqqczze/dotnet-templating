@@ -10,9 +10,9 @@ namespace Microsoft.TemplateEngine.Utils
 {
     public class DefaultTemplateEngineHost : ITemplateEngineHost
     {
-        private static readonly IReadOnlyList<KeyValuePair<Guid, Func<Type>>> NoComponents = Array.Empty<KeyValuePair<Guid, Func<Type>>>();
+        private static readonly IReadOnlyList<(Type Type, IIdentifiedComponent Instance)> NoComponents = Array.Empty<(Type Type, IIdentifiedComponent Instance)>();
         private readonly IReadOnlyDictionary<string, string> _hostDefaults;
-        private readonly IReadOnlyList<KeyValuePair<Guid, Func<Type>>> _hostBuiltInComponents;
+        private readonly IReadOnlyList<(Type Type, IIdentifiedComponent Instance)> _hostBuiltInComponents;
         private Dictionary<string, Action<string, string[]>> _diagnosticLoggers;
 
         public DefaultTemplateEngineHost(string hostIdentifier, string version)
@@ -25,7 +25,7 @@ namespace Microsoft.TemplateEngine.Utils
         {
         }
 
-        public DefaultTemplateEngineHost(string hostIdentifier, string version, Dictionary<string, string> defaults, IReadOnlyList<KeyValuePair<Guid, Func<Type>>> builtIns)
+        public DefaultTemplateEngineHost(string hostIdentifier, string version, Dictionary<string, string> defaults, IReadOnlyList<(Type Type, IIdentifiedComponent Instance)> builtIns)
             : this(hostIdentifier, version, defaults, builtIns, null)
         {
         }
@@ -35,7 +35,7 @@ namespace Microsoft.TemplateEngine.Utils
         {
         }
 
-        public DefaultTemplateEngineHost(string hostIdentifier, string version, Dictionary<string, string> defaults, IReadOnlyList<KeyValuePair<Guid, Func<Type>>> builtIns, IReadOnlyList<string> fallbackHostTemplateConfigNames)
+        public DefaultTemplateEngineHost(string hostIdentifier, string version, Dictionary<string, string> defaults, IReadOnlyList<(Type Type, IIdentifiedComponent Instance)> builtIns, IReadOnlyList<string> fallbackHostTemplateConfigNames)
         {
             HostIdentifier = hostIdentifier;
             Version = version;
@@ -56,7 +56,7 @@ namespace Microsoft.TemplateEngine.Utils
 
         public string Version { get; }
 
-        public virtual IReadOnlyList<KeyValuePair<Guid, Func<Type>>> BuiltInComponents => _hostBuiltInComponents;
+        public virtual IReadOnlyList<(Type Type, IIdentifiedComponent Instance)> BuiltInComponents => _hostBuiltInComponents;
 
         public virtual void LogMessage(string message)
         {

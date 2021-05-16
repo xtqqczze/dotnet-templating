@@ -34,12 +34,6 @@ namespace Microsoft.TemplateEngine.Abstractions
         ITemplatePackageManager TemplatePackagesManager { get; }
 
         /// <summary>
-        /// Adds path to be scanned by <see cref="IComponentManager"/> when looking up assemblies for components.
-        /// </summary>
-        /// <param name="probeIn">Absolute path to be probed.</param>
-        void AddProbingPath(string probeIn);
-
-        /// <summary>
         /// Gets all templates based on current settings.
         /// </summary>
         /// <remarks>
@@ -68,11 +62,6 @@ namespace Microsoft.TemplateEngine.Abstractions
         /// <param name="baselineName">Defines which baseline of template to load.</param>
         /// <returns>Fully loaded template or <c>null</c> if it fails to load template.</returns>
         ITemplate? LoadTemplate(ITemplateInfo info, string baselineName);
-
-        /// <summary>
-        /// Saves settings to file.
-        /// </summary>
-        void Save();
 
         /// <summary>
         /// Loads <see cref="IMountPoint"/> via <see cref="IMountPointFactory"/> that are
