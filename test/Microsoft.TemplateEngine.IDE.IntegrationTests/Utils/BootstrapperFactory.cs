@@ -25,7 +25,7 @@ namespace Microsoft.TemplateEngine.IDE.IntegrationTests.Utils
                     host.VirtualizeDirectory(virtualLocation);
                 }
             }
-            return new Bootstrapper(host, null, true);
+            return new Bootstrapper(host, onFirstRun: null, virtualizeConfiguration: true, loadDefaultComponents: true);
         }
 
         private static ITemplateEngineHost CreateHost(bool loadBuiltInTemplates = false)
@@ -36,9 +36,6 @@ namespace Microsoft.TemplateEngine.IDE.IntegrationTests.Utils
             };
 
             var builtIns = new List<(Type, IIdentifiedComponent)>();
-            builtIns.AddRange(Edge.Components.AllComponents);
-            builtIns.AddRange(Orchestrator.RunnableProjects.Components.AllComponents);
-
             if (loadBuiltInTemplates)
             {
                 builtIns.Add((typeof(ITemplatePackageProviderFactory), new BuiltInTemplatePackagesProviderFactory()));
