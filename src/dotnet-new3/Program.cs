@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using Microsoft.Extensions.Logging;
 using Microsoft.TemplateEngine.Abstractions;
 using Microsoft.TemplateEngine.Abstractions.TemplatePackage;
 using Microsoft.TemplateEngine.Cli;
@@ -71,8 +72,14 @@ namespace Dotnet_new3
                 HostVersion,
                 preferences,
                 builtIns,
-                new[] { "dotnetcli" });
-
+                new[] { "dotnetcli" },
+                loggerFactory: LoggerFactory.Create(builder =>
+                {
+                    builder
+                        .SetMinimumLevel(LogLevel.Debug)
+                        .AddConsole()
+                        .AddEventSourceLogger();
+                }));
             return host;
         }
 
