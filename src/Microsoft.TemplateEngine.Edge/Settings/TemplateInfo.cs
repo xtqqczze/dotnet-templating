@@ -13,9 +13,9 @@ using Newtonsoft.Json.Linq;
 
 namespace Microsoft.TemplateEngine.Edge.Settings
 {
-    internal partial class TemplateInfo : ITemplateInfo
+    internal partial class TemplateInfo : ITemplateInfo, ITemplateInfoWithHostJsonCache
     {
-        internal const string CurrentVersion = "1.0.0.6";
+        internal const string CurrentVersion = "1.0.0.7";
 
 #pragma warning disable CS0618 // Type or member is obsolete
         private IReadOnlyDictionary<string, ICacheTag>? _tags;
@@ -97,6 +97,11 @@ namespace Microsoft.TemplateEngine.Edge.Settings
 
             Name = localizationInfo?.Name ?? template.Name;
             Parameters = LocalizeParameters(template, localizationInfo);
+
+            if (template is ITemplateInfoWithHostJsonCache templateInfoWithHostJsonCache)
+            {
+                HostData = templateInfoWithHostJsonCache.HostData;
+            }
         }
 
         [JsonProperty]
@@ -220,6 +225,8 @@ namespace Microsoft.TemplateEngine.Edge.Settings
 
         [JsonIgnore]
         bool ITemplateInfo.HasScriptRunningPostActions { get; set; }
+
+        public JObject? HostData { get; private set; }
 
         public static TemplateInfo FromJObject(JObject entry)
         {

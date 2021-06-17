@@ -3,19 +3,24 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Microsoft.TemplateEngine.Abstractions;
 using Microsoft.TemplateEngine.Abstractions.Mount;
+using Microsoft.TemplateEngine.Edge.Settings;
 using Microsoft.TemplateEngine.Utils;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.TemplateEngine.Orchestrator.RunnableProjects
 {
-    internal class RunnableProjectTemplate : ITemplate
+    internal class RunnableProjectTemplate : ITemplate, ITemplateInfoWithHostJsonCache
     {
         private readonly SimpleConfigModel _config;
         private readonly IGenerator _generator;
         private readonly IFile _localeConfigFile;
         private readonly IFile _hostConfigFile;
+        private readonly JObject _hostData;
 
         internal RunnableProjectTemplate(
             IGenerator generator,
@@ -27,6 +32,15 @@ namespace Microsoft.TemplateEngine.Orchestrator.RunnableProjects
             _generator = generator;
             _localeConfigFile = localeConfigFile;
             _hostConfigFile = hostConfigFile;
+
+            if (hostConfigFile != null)
+            {
+                using (var sr = new StreamReader(hostConfigFile.OpenRead()))
+                using (var jsonTextReader = new JsonTextReader(sr))
+                {
+                    _hostData = JObject.Load(jsonTextReader);
+                }
+            }
         }
 
         IDirectory ITemplate.TemplateSourceRoot => _config.TemplateSourceRoot;
@@ -141,6 +155,8 @@ namespace Microsoft.TemplateEngine.Orchestrator.RunnableProjects
         IReadOnlyDictionary<string, string> ITemplateInfo.TagsCollection => _config.Tags;
 
         bool ITemplateInfo.HasScriptRunningPostActions { get; set; }
+
+        JObject ITemplateInfoWithHostJsonCache.HostData => _hostData;
 
         internal IRunnableProjectConfig Config => _config;
     }

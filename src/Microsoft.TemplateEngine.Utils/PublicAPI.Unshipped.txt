@@ -1,1 +1,2 @@
-﻿
+﻿Microsoft.TemplateEngine.Edge.Settings.ITemplateInfoWithHostJsonCache
+Microsoft.TemplateEngine.Edge.Settings.ITemplateInfoWithHostJsonCache.HostData.get -> Newtonsoft.Json.Linq.JObject?
